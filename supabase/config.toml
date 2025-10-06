@@ -1,0 +1,4 @@
+project_id = "bdgzxduiyepurgetoqhn"
+
+[functions.generate-outfit]
+verify_jwt = false
