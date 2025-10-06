@@ -13,7 +13,7 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [resultImage, setResultImage] = useState<string | null>(null);
+  const [resultFrames, setResultFrames] = useState<Array<{angle: string, imageUrl: string}> | null>(null);
 
   const handleGenerate = async () => {
     if (!selectedImage || !prompt.trim()) {
@@ -22,7 +22,7 @@ const Index = () => {
     }
 
     setIsGenerating(true);
-    setResultImage(null);
+    setResultFrames(null);
 
     try {
       // Convert image to base64
@@ -32,6 +32,8 @@ const Index = () => {
       const imageBase64 = await new Promise<string>((resolve) => {
         reader.onloadend = () => resolve(reader.result as string);
       });
+
+      toast.info("Generating 8-angle rotation view... This may take a moment.");
 
       // Call edge function
       const { data, error } = await supabase.functions.invoke('generate-outfit', {
@@ -50,9 +52,9 @@ const Index = () => {
         return;
       }
 
-      if (data?.imageUrl) {
-        setResultImage(data.imageUrl);
-        toast.success("Your AI fashion design is ready!");
+      if (data?.frames && Array.isArray(data.frames)) {
+        setResultFrames(data.frames);
+        toast.success("Your 360° AI fashion design is ready!");
       }
 
     } catch (error) {
@@ -66,7 +68,7 @@ const Index = () => {
   const handleNewDesign = () => {
     setSelectedImage(null);
     setPrompt("");
-    setResultImage(null);
+    setResultFrames(null);
   };
 
   if (!showDesigner) {
@@ -88,7 +90,7 @@ const Index = () => {
       </header>
 
       <div className="container mx-auto px-6 py-12">
-        {!resultImage ? (
+        {!resultFrames ? (
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Create Your Design</h2>
@@ -122,7 +124,7 @@ const Index = () => {
                 ) : (
                   <>
                     <Wand2 className="w-5 h-5 mr-2" />
-                    Generate AI Design
+                    Generate 360° AI Design
                   </>
                 )}
               </Button>
@@ -130,7 +132,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="max-w-5xl mx-auto">
-            <ResultViewer imageUrl={resultImage} />
+            <ResultViewer frames={resultFrames} />
             
             <div className="flex gap-4 justify-center mt-8">
               <Button
