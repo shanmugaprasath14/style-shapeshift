@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,9 +30,42 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log('Generating 8-angle outfit rotation...');
+    // Get auth header and create Supabase client
+    const authHeader = req.headers.get('Authorization')!;
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Get user from auth token
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Generating 8-angle outfit rotation for user:', user.id);
+
+    // Create outfit design record first
+    const { data: outfitDesign, error: designError } = await supabase
+      .from('outfit_designs')
+      .insert({
+        user_id: user.id,
+        prompt: prompt
+      })
+      .select()
+      .single();
+
+    if (designError || !outfitDesign) {
+      console.error('Failed to create outfit design:', designError);
+      throw new Error('Failed to create outfit design record');
+    }
 
     const generatedFrames: { angle: string; imageUrl: string }[] = [];
+    const frameRecords = [];
 
     for (const angle of ANGLES) {
       console.log(`Generating ${angle.name} view...`);
@@ -93,12 +127,47 @@ serve(async (req) => {
         throw new Error(`No image generated for ${angle.name}`);
       }
 
+      // Convert base64 to blob for storage
+      const base64Data = generatedImageUrl.split(',')[1];
+      const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Upload to storage
+      const fileName = `${user.id}/${outfitDesign.id}/${angle.name}.png`;
+      const { error: uploadError } = await supabase.storage
+        .from('outfit-images')
+        .upload(fileName, binaryData, {
+          contentType: 'image/png',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+      } else {
+        // Store frame metadata
+        frameRecords.push({
+          outfit_design_id: outfitDesign.id,
+          angle: angle.name,
+          storage_path: fileName
+        });
+      }
+
       generatedFrames.push({
         angle: angle.name,
         imageUrl: generatedImageUrl
       });
 
       console.log(`Successfully generated ${angle.name} view`);
+    }
+
+    // Save frame records to database
+    if (frameRecords.length > 0) {
+      const { error: framesError } = await supabase
+        .from('outfit_frames')
+        .insert(frameRecords);
+
+      if (framesError) {
+        console.error('Error saving frame records:', framesError);
+      }
     }
 
     console.log('Successfully generated all 8 angle views');

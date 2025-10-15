@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Hero } from "@/components/Hero";
 import { ImageUpload } from "@/components/ImageUpload";
 import { OutfitPrompt } from "@/components/OutfitPrompt";
 import { ResultViewer } from "@/components/ResultViewer";
@@ -9,8 +8,7 @@ import { Loader2, Wand2, LogOut, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const Index = () => {
-  const [showDesigner, setShowDesigner] = useState(false);
+const Designer = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -19,7 +17,6 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check auth and set up listener
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
@@ -50,7 +47,6 @@ const Index = () => {
     setResultFrames(null);
 
     try {
-      // Convert image to base64
       const reader = new FileReader();
       reader.readAsDataURL(selectedImage);
       
@@ -60,7 +56,6 @@ const Index = () => {
 
       toast.info("Generating 8-angle rotation view... This may take a moment.");
 
-      // Call edge function with user context
       const { data, error } = await supabase.functions.invoke('generate-outfit', {
         body: { imageBase64, prompt }
       });
@@ -102,13 +97,8 @@ const Index = () => {
     navigate("/auth");
   };
 
-  if (!showDesigner) {
-    return <Hero onGetStarted={() => user ? navigate("/designer") : navigate("/auth")} />;
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -118,7 +108,7 @@ const Index = () => {
                 <Home className="w-4 h-4 mr-2" />
                 My Designs
               </Button>
-              <Button variant="ghost" onClick={() => setShowDesigner(false)}>
+              <Button variant="ghost" onClick={() => navigate("/")}>
                 Back to Home
               </Button>
               {user && (
@@ -194,4 +184,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Designer;
