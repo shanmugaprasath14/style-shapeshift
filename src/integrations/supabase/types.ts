@@ -14,7 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      outfit_designs: {
+        Row: {
+          created_at: string | null
+          id: string
+          prompt: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          prompt: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          prompt?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outfit_designs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outfit_frames: {
+        Row: {
+          angle: string
+          created_at: string | null
+          id: string
+          outfit_design_id: string
+          storage_path: string
+        }
+        Insert: {
+          angle: string
+          created_at?: string | null
+          id?: string
+          outfit_design_id: string
+          storage_path: string
+        }
+        Update: {
+          angle?: string
+          created_at?: string | null
+          id?: string
+          outfit_design_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outfit_frames_outfit_design_id_fkey"
+            columns: ["outfit_design_id"]
+            isOneToOne: false
+            referencedRelation: "outfit_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
