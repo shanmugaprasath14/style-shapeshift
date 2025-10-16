@@ -102,15 +102,15 @@ serve(async (req) => {
 
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }), 
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Rate limits exceeded, please try again later.', code: 429 }), 
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.' }), 
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.', code: 402 }), 
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 

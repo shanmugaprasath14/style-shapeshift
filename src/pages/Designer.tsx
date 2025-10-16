@@ -60,15 +60,23 @@ const Designer = () => {
         body: { imageBase64, prompt }
       });
 
-      if (error) {
-        if (error.message.includes('Rate limit')) {
-          toast.error("Rate limit reached. Please try again in a moment.");
-        } else if (error.message.includes('Payment required')) {
+      if ((data as any)?.error) {
+        const code = (data as any).code as number | undefined;
+        const msg = (data as any).error as string | undefined;
+        if (code === 402 || /Payment required/i.test(msg ?? '')) {
           toast.error("AI usage limit reached. Please add credits to continue.");
+        } else if (code === 429 || /Rate limits?/i.test(msg ?? '')) {
+          toast.error("Rate limit reached. Please try again in a moment.");
         } else {
-          toast.error("Failed to generate outfit. Please try again.");
+          toast.error(msg || "Failed to generate outfit. Please try again.");
         }
-        console.error('Error:', error);
+        console.error('Function error payload:', data);
+        return;
+      }
+
+      if (error) {
+        console.error('Supabase invoke error:', error);
+        toast.error("Failed to generate outfit. Please try again.");
         return;
       }
 
