@@ -116,14 +116,21 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`AI gateway error for ${angle.name}:`, response.status, errorText);
-        throw new Error(`AI gateway error for ${angle.name}: ${response.status}`);
+        console.error(`AI gateway error for ${angle.name}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`AI gateway error for ${angle.name}: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log(`Response data for ${angle.name}:`, JSON.stringify(data).substring(0, 200));
+      
       const generatedImageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
       if (!generatedImageUrl) {
+        console.error(`No image in response for ${angle.name}. Response:`, JSON.stringify(data));
         throw new Error(`No image generated for ${angle.name}`);
       }
 
